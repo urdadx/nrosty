@@ -16,7 +16,8 @@ struct Todo {
 #[derive(Parser)]
 struct CLI {
     command: String,
-    query: String,
+    query: Option<String>,
+    todo_id: Option<usize>,
 }
 
 fn read_json_file(file_path: &str) -> Result<Vec<Todo>> {
@@ -47,7 +48,51 @@ fn add_new_todo(file_path: &str, new_todo: Todo) -> Result<()> {
     Ok(())
 }
 
-fn edit_todo(file_path: &str, new_todo: Todo) -> Result<()> {}
+fn edit_todo(file_path: &str, todo_index: usize, query: &str) -> Result<()> {
+    let mut todos = read_json_file(file_path).unwrap_or_else(|_| Vec::new());
+
+    if let Some(todo) = todos.get_mut(todo_index) {
+        todo.title = query.to_owned();
+    } else {
+        println!("Todo with the specified index does not exist");
+        return Ok(());
+    }
+
+    write_json_file(file_path, &todos)?;
+    println!("Todo updated successfully");
+
+    Ok(())
+}
+
+fn mark_as_completed(file_path: &str, todo_index: usize) -> Result<()> {
+    let mut todos = read_json_file(file_path).unwrap_or_else(|_| Vec::new());
+
+    if let Some(todo) = todos.get_mut(todo_index) {
+        todo.completed = true;
+    } else {
+        println!("Todo with the specified index does not exist");
+        return Ok(());
+    }
+
+    write_json_file(file_path, &todos)?;
+    println!("Todo was marked as completed");
+
+    Ok(())
+}
+
+fn delete_todo(file_path: &str, todo_index: usize) -> Result<()> {
+    let mut todos = read_json_file(file_path).unwrap_or_else(|_| Vec::new());
+
+    if todo_index < todos.len() {
+        todos.remove(todo_index);
+        write_json_file(file_path, &todos)?;
+        println!("Todo deleted successfully");
+    } else {
+        println!("Todo with the specified index does not exist");
+    }
+
+    Ok(())
+}
 
 fn get_current_time() -> String {
     let now = chrono::Utc::now();
@@ -59,18 +104,48 @@ fn main() -> Result<()> {
     let file_path = "todos.json";
     let command = args.command.as_str();
 
-    // build a new todo
-    let timestamp = get_current_time();
-    let new_todo = Todo {
-        title: args.query,
-        completed: false,
-        created_at: timestamp.to_owned(),
-        deleted_at: "--- ---".to_owned(),
-    };
-
     match command {
         "add" => {
-            add_new_todo(file_path, new_todo)?;
+            if let Some(query) = args.query {
+                // build a new todo
+                let timestamp = get_current_time();
+                let new_todo = Todo {
+                    title: query,
+                    completed: false,
+                    created_at: timestamp.to_owned(),
+                    deleted_at: "--- ---".to_owned(),
+                };
+                add_new_todo(file_path, new_todo)?;
+            } else {
+                println!("Query is required for adding a new todo");
+            }
+        }
+
+        "edit" => {
+            if let Some(todo_id) = args.todo_id {
+                if let Some(query) = args.query {
+                    edit_todo(file_path, todo_id, &query)?;
+                } else {
+                    println!("Query is required for editing a todo");
+                }
+            } else {
+                println!("Todo ID is required for editing");
+            }
+        }
+        "delete" => {
+            if let Some(todo_id) = args.todo_id {
+                delete_todo(file_path, todo_id)?;
+            } else {
+                println!("Todo ID is required for editing");
+            }
+        }
+
+        "done" => {
+            if let Some(todo_id) = args.todo_id {
+                mark_as_completed(file_path, todo_id)?;
+            } else {
+                println!("Todo ID is required for marking as completed");
+            }
         }
         _ => {
             println!("Invalid command");
