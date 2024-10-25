@@ -11,7 +11,7 @@ struct Todo {
     title: String,
     completed: bool,
     created_at: String,
-    completed_at: String,
+    modified_at: String,
 }
 
 #[derive(Parser)]
@@ -28,6 +28,7 @@ enum Commands {
     Delete { todo_id: usize },
     Done { todo_id: usize },
     List,
+    Clear,
 }
 
 fn read_json_file(file_path: &str) -> Result<Vec<Todo>> {
@@ -102,7 +103,7 @@ fn list_todos(file_path: &str) -> Result<()> {
     let todos = read_json_file(file_path).unwrap_or_else(|_| Vec::new());
 
     if todos.is_empty() {
-        println!("No todos found");
+        println!("No todos found...Use the add command to add a new todo");
         return Ok(());
     }
 
@@ -116,8 +117,8 @@ fn list_todos(file_path: &str) -> Result<()> {
             Cell::new("ID").fg(Color::Green),
             Cell::new("Status").fg(Color::Green),
             Cell::new("Title").fg(Color::Green),
-            Cell::new("Created At").fg(Color::Green),
-            Cell::new("Completed At").fg(Color::Green),
+            Cell::new("Date created").fg(Color::Green),
+            Cell::new("Date modified").fg(Color::Green),
         ]);
 
     // Add data rows
@@ -139,7 +140,7 @@ fn list_todos(file_path: &str) -> Result<()> {
             status,
             title,
             Cell::new(&todo.created_at).fg(Color::Cyan),
-            Cell::new(&todo.completed_at).fg(Color::White),
+            Cell::new(&todo.modified_at).fg(Color::White),
         ]);
     }
 
@@ -154,6 +155,13 @@ fn list_todos(file_path: &str) -> Result<()> {
         uncompleted_count
     );
 
+    Ok(())
+}
+
+fn clear_todos(file_path: &str) -> Result<()> {
+    let todos: Vec<Todo> = Vec::new();
+    write_json_file(file_path, &todos)?;
+    println!("All todos have been cleared");
     Ok(())
 }
 
@@ -173,7 +181,7 @@ fn main() -> Result<()> {
                 title: title.clone(),
                 completed: false,
                 created_at: timestamp,
-                completed_at: "--- ---".to_owned(),
+                modified_at: "--- --- ---".to_owned(),
             };
             add_new_todo(file_path, new_todo)?;
         }
@@ -188,6 +196,9 @@ fn main() -> Result<()> {
         }
         Commands::List => {
             list_todos(file_path)?;
+        }
+        Commands::Clear => {
+            clear_todos(file_path)?;
         }
     }
 
