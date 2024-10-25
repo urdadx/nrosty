@@ -3,36 +3,42 @@
     "title": "eat",
     "completed": true,
     "created_at": "2024-10-22 20:40:17",
-    "deleted_at": "--- ---"
+    "completed_at": "--- ---"
   },
   {
     "title": "read quran",
     "completed": true,
     "created_at": "2024-10-22 20:40:54",
-    "deleted_at": "--- ---"
+    "completed_at": "--- ---"
   },
   {
     "title": "eat",
-    "completed": false,
+    "completed": true,
     "created_at": "2024-10-22 20:48:10",
-    "deleted_at": "--- ---"
+    "completed_at": "--- ---"
   },
   {
     "title": "shit",
-    "completed": false,
+    "completed": true,
     "created_at": "2024-10-22 20:48:22",
-    "deleted_at": "--- ---"
+    "completed_at": "--- ---"
   },
   {
     "title": "new task",
     "completed": false,
     "created_at": "2024-10-23 12:57:55",
-    "deleted_at": "--- ---"
+    "completed_at": "--- ---"
   },
   {
     "title": "new task again",
     "completed": false,
     "created_at": "2024-10-23 13:24:41",
-    "deleted_at": "--- ---"
+    "completed_at": "--- ---"
+  },
+  {
+    "title": "everyone hates chris",
+    "completed": false,
+    "created_at": "2024-10-25 15:42:27",
+    "completed_at": "--- ---"
   }
 ]

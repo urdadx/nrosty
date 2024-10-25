@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use chrono;
-use clap::Parser;
+use clap::{Parser, Subcommand};
+use comfy_table::{Cell, Color, ContentArrangement, Table};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
@@ -10,14 +11,23 @@ struct Todo {
     title: String,
     completed: bool,
     created_at: String,
-    deleted_at: String,
+    completed_at: String,
 }
 
 #[derive(Parser)]
+#[command(author, version, about, long_about = None)]
 struct CLI {
-    command: String,
-    query: Option<String>,
-    todo_id: Option<usize>,
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    Add { title: String },
+    Edit { todo_id: usize, title: String },
+    Delete { todo_id: usize },
+    Done { todo_id: usize },
+    List,
 }
 
 fn read_json_file(file_path: &str) -> Result<Vec<Todo>> {
@@ -39,27 +49,23 @@ fn write_json_file(file_path: &str, todos: &Vec<Todo>) -> Result<()> {
 }
 
 fn add_new_todo(file_path: &str, new_todo: Todo) -> Result<()> {
-    // Read the existing todos from the file
     let mut todos = read_json_file(file_path).unwrap_or_else(|_| Vec::new());
-
     todos.push(new_todo);
     write_json_file(file_path, &todos)?;
-
+    println!("Todo added successfully");
     Ok(())
 }
 
-fn edit_todo(file_path: &str, todo_index: usize, query: &str) -> Result<()> {
+fn edit_todo(file_path: &str, todo_index: usize, title: &str) -> Result<()> {
     let mut todos = read_json_file(file_path).unwrap_or_else(|_| Vec::new());
 
     if let Some(todo) = todos.get_mut(todo_index) {
-        todo.title = query.to_owned();
+        todo.title = title.to_owned();
+        write_json_file(file_path, &todos)?;
+        println!("Todo updated successfully");
     } else {
         println!("Todo with the specified index does not exist");
-        return Ok(());
     }
-
-    write_json_file(file_path, &todos)?;
-    println!("Todo updated successfully");
 
     Ok(())
 }
@@ -69,13 +75,11 @@ fn mark_as_completed(file_path: &str, todo_index: usize) -> Result<()> {
 
     if let Some(todo) = todos.get_mut(todo_index) {
         todo.completed = true;
+        write_json_file(file_path, &todos)?;
+        println!("Todo marked as completed");
     } else {
         println!("Todo with the specified index does not exist");
-        return Ok(());
     }
-
-    write_json_file(file_path, &todos)?;
-    println!("Todo was marked as completed");
 
     Ok(())
 }
@@ -94,61 +98,96 @@ fn delete_todo(file_path: &str, todo_index: usize) -> Result<()> {
     Ok(())
 }
 
+fn list_todos(file_path: &str) -> Result<()> {
+    let todos = read_json_file(file_path).unwrap_or_else(|_| Vec::new());
+
+    if todos.is_empty() {
+        println!("No todos found");
+        return Ok(());
+    }
+
+    let mut table = Table::new();
+
+    // Configure the table style
+    table
+        .set_content_arrangement(ContentArrangement::Dynamic)
+        .set_width(120)
+        .set_header(vec![
+            Cell::new("ID").fg(Color::Green),
+            Cell::new("Status").fg(Color::Green),
+            Cell::new("Title").fg(Color::Green),
+            Cell::new("Created At").fg(Color::Green),
+            Cell::new("Completed At").fg(Color::Green),
+        ]);
+
+    // Add data rows
+    for (index, todo) in todos.iter().enumerate() {
+        let status = if todo.completed {
+            Cell::new("✓").fg(Color::Green)
+        } else {
+            Cell::new("☐").fg(Color::Yellow)
+        };
+
+        let title = if todo.completed {
+            Cell::new(&todo.title).fg(Color::White)
+        } else {
+            Cell::new(&todo.title).fg(Color::White)
+        };
+
+        table.add_row(vec![
+            Cell::new(index).fg(Color::Blue),
+            status,
+            title,
+            Cell::new(&todo.created_at).fg(Color::Cyan),
+            Cell::new(&todo.completed_at).fg(Color::White),
+        ]);
+    }
+
+    // Print the table
+    println!("{table}");
+    let completed_count = todos.iter().filter(|todo| todo.completed).count();
+    let uncompleted_count = todos.len() - completed_count;
+    println!(
+        "\n📊 Total todos: {} | Completed: {} | Uncompleted: {}\n",
+        todos.len(),
+        completed_count,
+        uncompleted_count
+    );
+
+    Ok(())
+}
+
 fn get_current_time() -> String {
     let now = chrono::Utc::now();
     now.format("%Y-%m-%d %H:%M:%S").to_string()
 }
 
 fn main() -> Result<()> {
-    let args = CLI::parse();
+    let cli = CLI::parse();
     let file_path = "todos.json";
-    let command = args.command.as_str();
 
-    match command {
-        "add" => {
-            if let Some(query) = args.query {
-                // build a new todo
-                let timestamp = get_current_time();
-                let new_todo = Todo {
-                    title: query,
-                    completed: false,
-                    created_at: timestamp.to_owned(),
-                    deleted_at: "--- ---".to_owned(),
-                };
-                add_new_todo(file_path, new_todo)?;
-            } else {
-                println!("Query is required for adding a new todo");
-            }
+    match &cli.command {
+        Commands::Add { title } => {
+            let timestamp = get_current_time();
+            let new_todo = Todo {
+                title: title.clone(),
+                completed: false,
+                created_at: timestamp,
+                completed_at: "--- ---".to_owned(),
+            };
+            add_new_todo(file_path, new_todo)?;
         }
-
-        "edit" => {
-            if let Some(todo_id) = args.todo_id {
-                if let Some(query) = args.query {
-                    edit_todo(file_path, todo_id, &query)?;
-                } else {
-                    println!("Query is required for editing a todo");
-                }
-            } else {
-                println!("Todo ID is required for editing");
-            }
+        Commands::Edit { todo_id, title } => {
+            edit_todo(file_path, *todo_id, title)?;
         }
-        "delete" => {
-            if let Some(todo_id) = args.todo_id {
-                delete_todo(file_path, todo_id)?;
-            } else {
-                println!("Todo ID is required for editing");
-            }
+        Commands::Delete { todo_id } => {
+            delete_todo(file_path, *todo_id)?;
         }
-
-        "done" => {
-            if let Some(todo_id) = args.todo_id {
-                mark_as_completed(file_path, todo_id)?;
-            } else {
-                println!("Todo ID is required for marking as completed");
-            }
+        Commands::Done { todo_id } => {
+            mark_as_completed(file_path, *todo_id)?;
         }
-        _ => {
-            println!("Invalid command");
+        Commands::List => {
+            list_todos(file_path)?;
         }
     }
 
