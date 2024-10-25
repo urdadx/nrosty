@@ -29,6 +29,7 @@ enum Commands {
     Done { todo_id: usize },
     List,
     Clear,
+    Docs,
 }
 
 fn read_json_file(file_path: &str) -> Result<Vec<Todo>> {
@@ -62,6 +63,7 @@ fn edit_todo(file_path: &str, todo_index: usize, title: &str) -> Result<()> {
 
     if let Some(todo) = todos.get_mut(todo_index) {
         todo.title = title.to_owned();
+        todo.modified_at = get_current_time();
         write_json_file(file_path, &todos)?;
         println!("Todo updated successfully");
     } else {
@@ -75,9 +77,15 @@ fn mark_as_completed(file_path: &str, todo_index: usize) -> Result<()> {
     let mut todos = read_json_file(file_path).unwrap_or_else(|_| Vec::new());
 
     if let Some(todo) = todos.get_mut(todo_index) {
-        todo.completed = true;
+        if todo.completed == true {
+            todo.completed = false;
+            println!("Todo marked as uncompleted");
+        } else {
+            todo.completed = true;
+            println!("Todo marked as completed");
+        }
+        todo.modified_at = get_current_time();
         write_json_file(file_path, &todos)?;
-        println!("Todo marked as completed");
     } else {
         println!("Todo with the specified index does not exist");
     }
@@ -97,6 +105,16 @@ fn delete_todo(file_path: &str, todo_index: usize) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn display_docs() {
+    println!("Available commands:");
+    println!("  add <title>          - Add a new todo with the given title");
+    println!("  edit <id> <title>    - Edit the title of the todo with the given id");
+    println!("  delete <id>          - Delete the todo with the given id");
+    println!("  done <id>            - Mark the todo with the given id as completed");
+    println!("  list                 - List all todos");
+    println!("  clear                - Clear all todos");
 }
 
 fn list_todos(file_path: &str) -> Result<()> {
@@ -140,7 +158,7 @@ fn list_todos(file_path: &str) -> Result<()> {
             status,
             title,
             Cell::new(&todo.created_at).fg(Color::Cyan),
-            Cell::new(&todo.modified_at).fg(Color::White),
+            Cell::new(&todo.modified_at).fg(Color::Yellow),
         ]);
     }
 
@@ -199,6 +217,9 @@ fn main() -> Result<()> {
         }
         Commands::Clear => {
             clear_todos(file_path)?;
+        }
+        Commands::Docs => {
+            display_docs();
         }
     }
 

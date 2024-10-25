@@ -1,6 +1,7 @@
 # Nrosty 
 
 Nrosty is an open-source CLI-based task management and todo list app
+
 The goal of nrosty is to provide users with an easy, convenient, privacy-centered, and fast way of managing their tasks without leaving their terminal
 
 Official Rust crate: In development, coming soon✨
@@ -19,7 +20,7 @@ See nrosty in action🚀
 
 ## ⭐ How to use
 
-It has 4 Core Features with more features coming soon:
+It has 7 Core Features with more features coming soon:
 | <div style="width:285px">**Feature**</div> | **Description** |
 |---|---|
 | **1. Add a new task** | You can easily add a new task using the *add "new task"* command |
@@ -28,7 +29,7 @@ It has 4 Core Features with more features coming soon:
 | **4. List all tasks** | List all your tasks in a beatiful table using the *list* command |
 | **5. Clear all tasks** | Clear all tasks using the *clear* command |
 **6. Delete task** | Delete all tasks. Use the command *delete <task_id>*
-**7. Help** | Display helpful commands to help you navigate nrosty easily. Use the *help* command
+**7. Docs** | Display helpful commands to help you navigate nrosty easily. Use the *docs* command
 
 ## 📚 Tech Stack
 
