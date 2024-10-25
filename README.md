@@ -12,11 +12,9 @@ Official Rust crate: In development, coming soon✨
 
 See nrosty in action🚀
 
-<div style="width: 600px;">
 
-![Nrosty Demo](.github/demo.png)
+https://github.com/user-attachments/assets/ed7688f3-977b-4667-8f81-5f09f1c90b86
 
-</div>
 
 ## ⭐ How to use
 
